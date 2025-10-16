@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { X, Smartphone, Globe, ShoppingCart, Users, Zap, Layers } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 
 interface OnboardingModalProps {
   onComplete: () => void;
@@ -19,7 +17,6 @@ const appTypes = [
 export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
 
   const toggleType = (typeId: string) => {
     setSelectedTypes((prev) =>
@@ -27,41 +24,34 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
     );
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     if (selectedTypes.length === 0) return;
 
     setLoading(true);
-    try {
-      await supabase
-        .from('profiles')
-        .update({
-          preferred_app_types: selectedTypes.join(','),
-          onboarding_complete: true,
-        })
-        .eq('id', user?.id);
-
-      onComplete();
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-    } finally {
+    // Save preferences locally or to localStorage
+    localStorage.setItem('preferredAppTypes', selectedTypes.join(','));
+    localStorage.setItem('onboardingComplete', 'true');
+    
+    setTimeout(() => {
       setLoading(false);
-    }
+      onComplete();
+    }, 500);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-[#121218] to-[#0B0B0F] border border-white/10 rounded-2xl max-w-2xl w-full p-8 relative">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg max-w-lg w-full p-6 relative">
         <button
           onClick={() => handleComplete()}
-          className="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-3xl font-bold text-white mb-2">Welcome to precode</h2>
-        <p className="text-gray-400 mb-8">What kind of apps do you usually build?</p>
+        <h2 className="text-xl font-medium text-white mb-1">Welcome</h2>
+        <p className="text-zinc-400 text-sm mb-6">What kind of apps do you usually build?</p>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           {appTypes.map((type) => {
             const Icon = type.icon;
             const isSelected = selectedTypes.includes(type.id);
@@ -70,14 +60,14 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
               <button
                 key={type.id}
                 onClick={() => toggleType(type.id)}
-                className={`p-6 rounded-xl border transition-all duration-300 ${
+                className={`p-4 rounded-lg border transition-colors ${
                   isSelected
-                    ? 'bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20'
-                    : 'bg-white/5 border-white/10 hover:border-blue-500/30'
+                    ? 'bg-white text-black border-white'
+                    : 'bg-zinc-800/50 border-zinc-700 hover:border-zinc-600 text-zinc-300'
                 }`}
               >
-                <Icon className={`w-8 h-8 mb-3 mx-auto ${isSelected ? 'text-blue-400' : 'text-gray-400'}`} />
-                <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                <Icon className={`w-5 h-5 mb-2 mx-auto ${isSelected ? 'text-black' : 'text-zinc-400'}`} />
+                <span className="text-xs font-medium">
                   {type.label}
                 </span>
               </button>
@@ -88,9 +78,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
         <button
           onClick={handleComplete}
           disabled={selectedTypes.length === 0 || loading}
-          className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-white font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-full py-2.5 bg-white text-black rounded-lg text-sm font-medium transition-colors hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Saving...' : "Let's Start Building"}
+          {loading ? 'Saving...' : "Continue"}
         </button>
       </div>
     </div>
