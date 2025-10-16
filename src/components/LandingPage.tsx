@@ -45,7 +45,7 @@ export default function LandingPage() {
         <header className="px-6 py-8 flex justify-center items-center max-w-7xl mx-auto">
           <div className="text-xl font-semibold tracking-tight flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
-            Navya
+            PRECODE
           </div>
         </header>
 

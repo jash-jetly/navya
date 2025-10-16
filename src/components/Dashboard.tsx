@@ -50,7 +50,7 @@ export default function Dashboard() {
       <div className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-xl font-semibold">Navya</h1>
+          <h1 className="text-xl font-semibold">PRECODE</h1>
           <p className="text-sm text-zinc-400 mt-1">AI Product Builder</p>
         </div>
 
