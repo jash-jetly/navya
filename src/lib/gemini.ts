@@ -30,51 +30,57 @@ export async function generateIdeasResponse(userInput: string) {
 
 export async function generateFlowChart(userInput: string) {
   try {
-    const prompt = `You are an expert system architect. Based on this app idea: "${userInput}"
+    const prompt = `Generate a Mermaid.js flowchart for this app: "${userInput}"
 
-    Generate a valid Mermaid.js flowchart that shows the complete user flow and system architecture.
-    
-    CRITICAL REQUIREMENTS:
-    - Start with exactly "flowchart TD" (no extra characters)
-    - Use only alphanumeric node IDs (A, B, C, etc.)
-    - Use proper arrow syntax: --> for connections
-    - Use [] for rectangles, {} for diamonds, () for rounded rectangles
-    - No special characters in node IDs
-    - Each line must be properly formatted
-    - No empty lines between flowchart elements
-    
-    Return ONLY the Mermaid code, no explanations, no markdown backticks.
-    
-    Example:
-    flowchart TD
-        A[Start] --> B[Login Page]
-        B --> C{Valid User?}
-        C -->|Yes| D[Dashboard]
-        C -->|No| B
-        D --> E[Features]
-    
-    Generate for: ${userInput}`;
+STRICT FORMAT RULES:
+- Start with "flowchart TD"
+- Use simple node IDs: A, B, C, D, etc.
+- Use --> for arrows
+- Use [] for boxes, {} for decisions
+- No quotes around text
+- No special characters in node IDs
+- Keep text simple and short
+
+Example:
+flowchart TD
+    A[Start] --> B[Login]
+    B --> C{Valid?}
+    C -->|Yes| D[Dashboard]
+    C -->|No| B
+
+Generate ONLY the flowchart code:`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let mermaidCode = response.text().trim();
     
-    // Clean up the response to ensure valid Mermaid syntax
-    mermaidCode = mermaidCode.replace(/```mermaid/g, '').replace(/```/g, '');
+    // Aggressive cleanup
+    mermaidCode = mermaidCode.replace(/```mermaid/g, '');
+    mermaidCode = mermaidCode.replace(/```/g, '');
+    mermaidCode = mermaidCode.replace(/^\s*[\r\n]/gm, ''); // Remove empty lines
     mermaidCode = mermaidCode.trim();
     
-    // Ensure it starts with flowchart
-    if (!mermaidCode.startsWith('flowchart')) {
-      mermaidCode = 'flowchart TD\n' + mermaidCode;
+    // Split into lines and clean each line
+    const lines = mermaidCode.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    // Ensure first line is flowchart TD
+    if (!lines[0] || !lines[0].startsWith('flowchart')) {
+      lines.unshift('flowchart TD');
     }
     
-    return mermaidCode;
+    // Validate and fix common issues
+    const cleanedLines = lines.map(line => {
+      // Remove any invalid characters that might cause parsing errors
+      return line.replace(/[""'']/g, '').replace(/\s+/g, ' ').trim();
+    });
+    
+    return cleanedLines.join('\n');
   } catch (error) {
     console.error('Error generating flowchart:', error);
-    // Return a fallback flowchart
+    // Return a simple fallback flowchart
     return `flowchart TD
-        A[User Input] --> B[Process Request]
-        B --> C[Generate Response]
-        C --> D[Display Result]`;
+    A[User Input] --> B[Process]
+    B --> C[Generate]
+    C --> D[Display]`;
   }
 }
