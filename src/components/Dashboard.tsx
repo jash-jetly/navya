@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { MessageSquare, GitBranch, Layout, Smartphone, BarChart3, Plus } from 'lucide-react';
 import IdeaInput from './IdeaInput';
-import FlowView from './FlowView';
-import WireframeView from './WireframeView';
-import AppView from './AppView';
-import MonitorView from './MonitorView';
 
 type View = 'idea' | 'flow' | 'wireframe' | 'app' | 'monitor';
 
@@ -31,14 +27,6 @@ export default function Dashboard() {
     switch (currentView) {
       case 'idea':
         return <IdeaInput onIdeaCreated={handleIdeaCreated} />;
-      case 'flow':
-        return <FlowView ideaId={currentIdea?.id} />;
-      case 'wireframe':
-        return <WireframeView ideaId={currentIdea?.id} />;
-      case 'app':
-        return <AppView ideaId={currentIdea?.id} />;
-      case 'monitor':
-        return <MonitorView ideaId={currentIdea?.id} />;
       default:
         return <IdeaInput onIdeaCreated={handleIdeaCreated} />;
     }
