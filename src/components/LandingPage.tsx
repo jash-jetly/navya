@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Sparkles, Send, Github, Mic, FileText, ArrowRight } from 'lucide-react';
 import { generateIdeasResponse, generateFlowChart } from '../lib/gemini';
+import { Feature, suggestFeatures, generateFeatureFlowchart, generateFinalAppFlowchart } from '../lib/featureFlowcharts';
 import FlowChart from './FlowChart';
 import ResultPage from './ResultPage';
 
 export default function LandingPage() {
   const [userInput, setUserInput] = useState('');
   const [conversation, setConversation] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
+  const [fullChatHistory, setFullChatHistory] = useState<Array<{type: 'user' | 'ai', message: string}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [flowChart, setFlowChart] = useState('');
   const [isGeneratingChart, setIsGeneratingChart] = useState(false);
@@ -14,6 +16,8 @@ export default function LandingPage() {
   const [showResultPage, setShowResultPage] = useState(false);
   const [currentUserInput, setCurrentUserInput] = useState('');
   const [currentAiResponse, setCurrentAiResponse] = useState('');
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [currentPhase, setCurrentPhase] = useState<'brainstorming' | 'features' | 'flowcharts' | 'final'>('brainstorming');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,23 +26,29 @@ export default function LandingPage() {
     const userMessage = userInput.trim();
     setCurrentUserInput(userMessage);
     setUserInput('');
-    setConversation(prev => [...prev, { type: 'user', message: userMessage }]);
+    
+    // Add to both conversation and full history
+    const newUserMessage = { type: 'user' as const, message: userMessage };
+    setConversation(prev => [...prev, newUserMessage]);
+    setFullChatHistory(prev => [...prev, newUserMessage]);
+    
+    // Navigate to result page immediately
+    setShowResultPage(true);
     setIsLoading(true);
-    setShowFlowChart(true);
 
     try {
-      // Generate AI response
-      const aiResponse = await generateIdeasResponse(userMessage);
+      // Generate AI response with full chat context
+      const aiResponse = await generateIdeasResponse(userMessage, fullChatHistory);
       setCurrentAiResponse(aiResponse);
-      setConversation(prev => [...prev, { type: 'ai', message: aiResponse }]);
       
-      // Generate flowchart
-      setIsGeneratingChart(true);
-      const chartData = await generateFlowChart(userMessage);
-      setFlowChart(chartData);
+      // Add AI response to both conversation and full history
+      const newAiMessage = { type: 'ai' as const, message: aiResponse };
+      setConversation(prev => [...prev, newAiMessage]);
+      setFullChatHistory(prev => [...prev, newAiMessage]);
       
-      // Navigate to result page
-      setShowResultPage(true);
+      // Don't generate flowchart immediately - let the AI guide the brainstorming process first
+      setFlowChart('');
+      setShowFlowChart(false);
     } catch (error) {
       const errorMessage = 'Sorry, I encountered an error. Please make sure your Gemini API key is configured correctly.';
       setCurrentAiResponse(errorMessage);
@@ -48,7 +58,7 @@ export default function LandingPage() {
       }]);
     } finally {
       setIsLoading(false);
-      setIsGeneratingChart(false);
+      // Don't set isGeneratingChart to false here since we're not generating charts initially
     }
   };
 
@@ -60,6 +70,63 @@ export default function LandingPage() {
     setCurrentAiResponse('');
   };
 
+  const handleFollowUp = async (message: string) => {
+    // Add user message to chat history
+    const newUserMessage = { type: 'user' as const, message };
+    const updatedHistory = [...fullChatHistory, newUserMessage];
+    setFullChatHistory(updatedHistory);
+
+    // Set loading states
+    setIsLoading(true);
+    setCurrentUserInput(message);
+    setCurrentAiResponse('');
+
+    try {
+      // Generate AI response with context
+      const aiResponse = await generateIdeasResponse(message, updatedHistory);
+      setCurrentAiResponse(aiResponse);
+      
+      // Add AI response to chat history
+      const aiMessage = { type: 'ai' as const, message: aiResponse };
+      const finalHistory = [...updatedHistory, aiMessage];
+      setFullChatHistory(finalHistory);
+      
+      setIsLoading(false);
+
+      // Check if AI suggests moving to feature phase
+      if (aiResponse.toLowerCase().includes('suggest features') || 
+          aiResponse.toLowerCase().includes('core features') ||
+          message.toLowerCase().includes('features') ||
+          message.toLowerCase().includes('what should it do')) {
+        
+        try {
+          // Generate feature suggestions
+          const suggestedFeatures = await suggestFeatures(message, finalHistory);
+          setFeatures(suggestedFeatures);
+          setCurrentPhase('features');
+        } catch (error) {
+          console.error('Error generating features:', error);
+        }
+      }
+
+      // Only generate flowchart if not in feature phase
+      if (currentPhase === 'brainstorming') {
+        setIsGeneratingChart(true);
+        try {
+          const newFlowChart = await generateFlowChart(aiResponse, finalHistory);
+          setFlowChart(newFlowChart);
+        } catch (error) {
+          console.error('Error generating flowchart:', error);
+        }
+        setIsGeneratingChart(false);
+      }
+    } catch (error) {
+      console.error('Error in follow-up:', error);
+      setIsLoading(false);
+      setIsGeneratingChart(false);
+    }
+  };
+
   // Show ResultPage if user has submitted a prompt
   if (showResultPage) {
     return (
@@ -68,6 +135,14 @@ export default function LandingPage() {
         aiResponse={currentAiResponse}
         flowChart={flowChart}
         onBack={handleBackToLanding}
+        isLoadingAI={isLoading && !currentAiResponse}
+        isLoadingChart={isGeneratingChart}
+        onFollowUp={handleFollowUp}
+        fullChatHistory={fullChatHistory}
+        features={features}
+        onFeaturesUpdate={setFeatures}
+        onFinalFlowchart={setFlowChart}
+        currentPhase={currentPhase}
       />
     );
   }

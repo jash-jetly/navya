@@ -10,14 +10,44 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 
 export const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-export async function generateIdeasResponse(userInput: string) {
+export async function generateIdeasResponse(userInput: string, chatHistory: Array<{type: 'user' | 'ai', message: string}> = []) {
   try {
-    const prompt = `You are an AI product strategist. The user wants to discuss their idea: "${userInput}". 
+    let contextPrompt = '';
+    if (chatHistory.length > 0) {
+      contextPrompt = '\n\nPrevious conversation context:\n';
+      chatHistory.forEach((msg, index) => {
+        contextPrompt += `${msg.type === 'user' ? 'User' : 'Precode'}: ${msg.message}\n`;
+      });
+      contextPrompt += '\n';
+    }
+
+    const prompt = `You are an enthusiastic and supportive AI product strategist who loves helping entrepreneurs bring their ideas to life. ${contextPrompt}The user's current message: "${userInput}". 
     
-    Provide helpful insights, suggestions, and questions to help them develop their idea further. 
-    Be encouraging, practical, and ask thoughtful follow-up questions.
+    ${chatHistory.length > 0 ? 
+      `Based on our conversation, continue helping them refine their idea. 
+      
+      If they seem ready to move forward with features (they've answered basic questions about their idea), suggest that we can now brainstorm specific features together.
+      
+      If they want to modify features or flows, guide them through it step by step. 
+      
+      If they're asking about implementation or seem ready for the next step, you can suggest: "Great! It sounds like you have a solid understanding of your idea. Would you like me to suggest some core features we should include in your app? I can help you brainstorm the essential features that would make your idea successful!"
+      
+      Celebrate their progress and keep them motivated!` : 
+      `🌟 First, let me say - having a new idea takes courage, and you should be proud of taking this step! Your idea has potential, and I'm here to help you explore it fully.
+
+Instead of jumping straight into technical details, let's brainstorm together:
+
+1. What problem does your idea solve? Who would benefit from it?
+2. What are the core features you envision? 
+3. What makes your idea unique or different?
+4. Who is your target audience?
+
+Let's explore these aspects first before we create any flowcharts. I want to make sure we capture the full vision of your idea and help you feel confident about it!`
+    }
     
-    Keep your response conversational and under 200 words.`;
+    Be extremely encouraging, enthusiastic, and supportive. Help them feel confident about their idea.
+    Ask specific questions to understand their vision better.
+    Keep your response warm and under 250 words.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -28,9 +58,18 @@ export async function generateIdeasResponse(userInput: string) {
   }
 }
 
-export async function generateFlowChart(userInput: string) {
+export async function generateFlowChart(userInput: string, chatHistory: Array<{type: 'user' | 'ai', message: string}> = []) {
   try {
-    const prompt = `Generate a Mermaid.js flowchart for this app: "${userInput}"
+    let contextPrompt = '';
+    if (chatHistory.length > 0) {
+      contextPrompt = '\n\nPrevious conversation context:\n';
+      chatHistory.forEach((msg, index) => {
+        contextPrompt += `${msg.type === 'user' ? 'User' : 'AI'}: ${msg.message}\n`;
+      });
+      contextPrompt += '\nIf the user is asking to update or modify a previous flowchart, make the requested changes while keeping the overall structure coherent.\n';
+    }
+
+    const prompt = `Generate a Mermaid.js flowchart for this app: "${userInput}"${contextPrompt}
 
 STRICT FORMAT RULES:
 - Start with "flowchart TD"
