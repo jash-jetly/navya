@@ -201,9 +201,17 @@ const ResultPage: React.FC<ResultPageProps> = ({
                           <p className="text-white/80 font-medium">Generating flowchart...</p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div className="w-16 h-16 border-4 border-zinc-600 rounded-2xl mx-auto opacity-30"></div>
-                          <p className="text-white/50">No flowchart available</p>
+                        <div className="space-y-6 max-w-md mx-auto">
+                          <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl mx-auto flex items-center justify-center border border-blue-500/30">
+                            <Zap className="w-8 h-8 text-blue-400" />
+                          </div>
+                          <div className="text-center space-y-3">
+                            <h3 className="text-xl font-semibold text-white">Brainstorming Session</h3>
+                            <p className="text-white/70 leading-relaxed">
+                              Continue exploring and refining your ideas. Once you've finalized all the features and concepts, 
+                              tell me to generate a comprehensive flowchart for your product.
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
