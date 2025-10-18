@@ -180,12 +180,19 @@ export default function LandingPage() {
           {/* Main heading */}
           <div className="text-center mb-16">
             <h1 className="text-6xl md:text-8xl font-light tracking-tight mb-8 leading-[0.9]">
-              Where ideas become reality
+              Your idea deserves to exist
             </h1>
 
-            <p className="text-xl text-zinc-400 mb-16 max-w-2xl mx-auto font-light leading-relaxed">
-              Build fully functional apps and websites through simple conversations
+            <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+              Every successful app started with someone just like you, having a simple idea. Let's turn yours into reality through guided conversations and expert support.
             </p>
+            
+            <div className="flex items-center justify-center gap-2 mb-16">
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-400 text-sm font-medium">Your AI product strategist is ready to help</span>
+              </div>
+            </div>
           </div>
 
           {/* Conversation Area */}
@@ -241,20 +248,11 @@ export default function LandingPage() {
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                placeholder="make a clone of x (twitter)"
+                placeholder="I have this idea for an app that... (don't worry, every great app started with someone sharing their idea!)"
                 className="w-full p-6 pr-32 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-600 text-lg"
                 disabled={isLoading}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <button type="button" className="p-2 text-zinc-400 hover:text-white transition-colors">
-                  <FileText className="w-5 h-5" />
-                </button>
-                <button type="button" className="p-2 text-zinc-400 hover:text-white transition-colors">
-                  <Github className="w-5 h-5" />
-                </button>
-                <button type="button" className="p-2 text-zinc-400 hover:text-white transition-colors">
-                  <Mic className="w-5 h-5" />
-                </button>
                 <button
                   type="submit"
                   disabled={!userInput.trim() || isLoading}

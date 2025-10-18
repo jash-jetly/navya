@@ -19,6 +19,7 @@ const FeatureManager: React.FC<FeatureManagerProps> = ({
   const [loadingFeatureId, setLoadingFeatureId] = useState<string | null>(null);
   const [viewingFlowchart, setViewingFlowchart] = useState<string | null>(null);
   const [isGeneratingFinal, setIsGeneratingFinal] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleGenerateFeatureFlowchart = async (feature: Feature) => {
     setLoadingFeatureId(feature.id);
@@ -54,9 +55,9 @@ const FeatureManager: React.FC<FeatureManagerProps> = ({
   return (
     <div className="space-y-6">
       <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Feature Flowcharts</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">🎯 Your Feature Roadmap</h3>
         <p className="text-zinc-400 text-sm mb-6">
-          Generate individual flowcharts for each feature to visualize user journeys.
+          Great work! Now let's bring each feature to life with visual flowcharts. These will help you see exactly how users will experience your amazing idea.
         </p>
         
         <div className="space-y-4">
@@ -107,13 +108,13 @@ const FeatureManager: React.FC<FeatureManagerProps> = ({
           <div className="mt-6 pt-6 border-t border-zinc-700">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-white mb-1">Ready for Final App Flowchart</h4>
+                <h4 className="font-medium text-white mb-1">🚀 You're Almost There!</h4>
                 <p className="text-sm text-zinc-400">
-                  All features have been mapped. Generate the complete app flowchart.
+                  Fantastic! All features are mapped out beautifully. Ready to see your complete app vision come together?
                 </p>
               </div>
               <button
-                onClick={handleGenerateFinalFlowchart}
+                onClick={() => setShowConfirmDialog(true)}
                 disabled={isGeneratingFinal}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
@@ -155,6 +156,39 @@ const FeatureManager: React.FC<FeatureManagerProps> = ({
                   chart={features.find(f => f.id === viewingFlowchart)?.flowchart || ''} 
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              🎉 Time to Bring It All Together!
+            </h3>
+            <p className="text-zinc-300 mb-6">
+              You've done amazing work defining these features! Ready to see your complete app vision in one beautiful, comprehensive user flow diagram? 
+              This will show exactly how users will experience your incredible idea from start to finish.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  handleGenerateFinalFlowchart();
+                }}
+                disabled={isGeneratingFinal}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                {isGeneratingFinal ? 'Generating...' : 'Yes, Generate Flow'}
+              </button>
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 px-4 py-2 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600 transition-colors"
+              >
+                Not Yet
+              </button>
             </div>
           </div>
         </div>

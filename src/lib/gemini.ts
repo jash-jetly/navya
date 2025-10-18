@@ -21,33 +21,57 @@ export async function generateIdeasResponse(userInput: string, chatHistory: Arra
       contextPrompt += '\n';
     }
 
-    const prompt = `You are an enthusiastic and supportive AI product strategist who loves helping entrepreneurs bring their ideas to life. ${contextPrompt}The user's current message: "${userInput}". 
+    const prompt = `You are an enthusiastic and encouraging technical product strategist who specializes in helping new entrepreneurs bring their app ideas to life. You understand that many people feel uncertain about their ideas and need both technical guidance and emotional support. Be warm, supportive, and genuinely excited about their vision while focusing on technical app development. ${contextPrompt}The user's current message: "${userInput}". 
     
     ${chatHistory.length > 0 ? 
-      `Based on our conversation, continue helping them refine their idea. 
+      `**I love seeing your idea evolve!** 🚀 Based on our conversation, let's continue building something amazing together.
       
-      If they seem ready to move forward with features (they've answered basic questions about their idea), suggest that we can now brainstorm specific features together.
+      **You're doing great!** Every successful app started exactly where you are now. Let's focus on:
+      - **User Flow**: How users will navigate through your app (this is where the magic happens!)
+      - **Core Features**: Essential functionality that will make users love your app
+      - **Technical Requirements**: What your app needs to accomplish (we'll make it happen!)
+      - **User Experience**: How users will interact with each feature (this is your competitive advantage!)
       
-      If they want to modify features or flows, guide them through it step by step. 
+      **✨ Your idea has real potential!** If you're feeling ready to move forward, I'd love to help you define the core features for your app. Once we finalize all features, I'll create a comprehensive user flow diagram that shows exactly how users will navigate through your amazing creation.
       
-      If they're asking about implementation or seem ready for the next step, you can suggest: "Great! It sounds like you have a solid understanding of your idea. Would you like me to suggest some core features we should include in your app? I can help you brainstorm the essential features that would make your idea successful!"
-      
-      Celebrate their progress and keep them motivated!` : 
-      `🌟 First, let me say - having a new idea takes courage, and you should be proud of taking this step! Your idea has potential, and I'm here to help you explore it fully.
+      **Ready to take the next step?** Would you like to finalize these features and create a user flow diagram that brings your vision to life?` : 
+      `**🎉 Welcome to App Development Planning - You're in the right place!** 
 
-Instead of jumping straight into technical details, let's brainstorm together:
+**First, let me say this: Having an app idea puts you ahead of 99% of people!** 💡 Every successful app started with someone just like you, sitting where you are right now, wondering if their idea could work. Spoiler alert: it absolutely can!
 
-1. What problem does your idea solve? Who would benefit from it?
-2. What are the core features you envision? 
-3. What makes your idea unique or different?
-4. Who is your target audience?
+**🚀 Let's turn your vision into reality! Here's what we'll discover together:**
 
-Let's explore these aspects first before we create any flowcharts. I want to make sure we capture the full vision of your idea and help you feel confident about it!`
+**🔧 Technical Discovery (The Fun Part!):**
+1. **Core Functionality**: What amazing things will your app do? (I'm already excited!)
+2. **User Journey**: How will users fall in love with your app experience?
+3. **Key Screens**: What screens will make users go "wow, this is exactly what I needed!"
+4. **User Actions**: What will users be able to accomplish with your app?
+
+**📱 Development Focus (Your Success Blueprint):**
+- User flow and navigation (making it intuitive and delightful)
+- Feature requirements (building what users actually want)
+- Technical functionality (making it work seamlessly)
+- User experience design (creating something users can't live without)
+
+**💪 Remember: Every great app started with someone believing in their idea. I believe in yours too!**
+
+Let's start by understanding your app's core functionality and user flow. What problem does your app solve, and how do you envision users interacting with it?`
     }
     
-    Be extremely encouraging, enthusiastic, and supportive. Help them feel confident about their idea.
-    Ask specific questions to understand their vision better.
-    Keep your response warm and under 250 words.`;
+    **🎯 Your response should be:**
+    - **Encouraging and supportive** - remind them their idea has value
+    - **Technically focused** but accessible and exciting
+    - **Confidence-building** - use phrases like "This is exactly the kind of thinking that leads to successful apps!"
+    - **Action-oriented** - help them see clear next steps
+    
+    **Format guidelines:**
+    - **Bold headings** for sections with encouraging language
+    - Clear bullet points that build excitement
+    - Proper spacing between sections
+    - Use emojis sparingly but effectively to convey enthusiasm
+    - Always end on an encouraging, forward-looking note
+    
+    Keep response under 350 words. Remember: You're not just giving technical advice, you're helping someone believe in their vision while providing expert guidance!`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -71,29 +95,35 @@ export async function generateFlowChart(userInput: string, chatHistory: Array<{t
 
     const prompt = `Generate a Mermaid.js flowchart for this app: "${userInput}"${contextPrompt}
 
-STRICT FORMAT RULES:
-- Start with "flowchart TD"
-- Use simple node IDs: A, B, C, D, etc.
+CRITICAL MERMAID SYNTAX RULES:
+- Start with exactly "flowchart TD"
+- Use ONLY alphanumeric node IDs: A, B, C, D, etc. (NO spaces, NO special chars)
 - Use --> for arrows
-- Use [] for boxes, {} for decisions
-- No quotes around text
-- No special characters in node IDs
-- Keep text simple and short
+- Use [] for rectangular boxes
+- Use {} for diamond decision nodes
+- Use () for rounded boxes
+- Use |text| for arrow labels
+- NO quotes around any text
+- NO line breaks within node definitions
+- Keep node text under 20 characters
+- Each line must be a complete statement
 
-Example:
+VALID Example:
 flowchart TD
-    A[Start] --> B[Login]
-    B --> C{Valid?}
-    C -->|Yes| D[Dashboard]
-    C -->|No| B
+    A[App Start] --> B[User Login]
+    B --> C{Credentials Valid}
+    C -->|Yes| D[Main Dashboard]
+    C -->|No| E[Error Message]
+    E --> B
+    D --> F[Feature Access]
 
-Generate ONLY the flowchart code:`;
+Generate ONLY the mermaid flowchart code with NO markdown formatting:`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let mermaidCode = response.text().trim();
     
-    // Aggressive cleanup
+    // Comprehensive cleanup
     mermaidCode = mermaidCode.replace(/```mermaid/g, '');
     mermaidCode = mermaidCode.replace(/```/g, '');
     mermaidCode = mermaidCode.replace(/^\s*[\r\n]/gm, ''); // Remove empty lines
@@ -109,11 +139,33 @@ Generate ONLY the flowchart code:`;
     
     // Validate and fix common issues
     const cleanedLines = lines.map(line => {
-      // Remove any invalid characters that might cause parsing errors
-      return line.replace(/[""'']/g, '').replace(/\s+/g, ' ').trim();
+      // Skip the flowchart TD line
+      if (line.startsWith('flowchart')) return line;
+      
+      // Remove invalid characters and fix common syntax issues
+      let cleanLine = line
+        .replace(/[""'']/g, '') // Remove quotes
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .replace(/-->/g, ' --> ') // Ensure proper arrow spacing
+        .replace(/\|\s*([^|]+)\s*\|/g, '|$1|') // Fix arrow labels
+        .trim();
+      
+      // Validate node IDs (must be alphanumeric)
+      cleanLine = cleanLine.replace(/([A-Z]\d*)\s*\[/g, '$1['); // Fix node ID spacing
+      cleanLine = cleanLine.replace(/([A-Z]\d*)\s*\{/g, '$1{'); // Fix decision node spacing
+      cleanLine = cleanLine.replace(/([A-Z]\d*)\s*\(/g, '$1('); // Fix rounded node spacing
+      
+      return cleanLine;
     });
     
-    return cleanedLines.join('\n');
+    // Filter out invalid lines
+    const validLines = cleanedLines.filter(line => {
+      if (line.startsWith('flowchart')) return true;
+      // Must contain either --> or be a valid node definition
+      return line.includes('-->') || /^[A-Z]\d*[\[\{\(]/.test(line);
+    });
+    
+    return validLines.join('\n');
   } catch (error) {
     console.error('Error generating flowchart:', error);
     // Return a simple fallback flowchart
