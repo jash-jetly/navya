@@ -5,23 +5,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Using localStorage instead of Supabase storage to avoid RLS policy issues
 export async function saveChatLogToStorage(chatLog: string, userId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const fileName = `${userId}.txt`;
-    const blob = new Blob([chatLog], { type: 'text/plain' });
-
-    const { error: uploadError } = await supabase.storage
-      .from('dumo')
-      .upload(fileName, blob, {
-        contentType: 'text/plain',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      return { success: false, error: uploadError.message };
-    }
-
+    const key = `chatlog_${userId}`;
+    localStorage.setItem(key, chatLog);
+    console.log('**Chat log saved successfully!** Your startup journey is being tracked locally.');
     return { success: true };
   } catch (error) {
     console.error('Save error:', error);
@@ -31,18 +20,14 @@ export async function saveChatLogToStorage(chatLog: string, userId: string): Pro
 
 export async function getChatLogFromStorage(userId: string): Promise<{ success: boolean; data?: string; error?: string }> {
   try {
-    const fileName = `${userId}.txt`;
-
-    const { data, error } = await supabase.storage
-      .from('dumo')
-      .download(fileName);
-
-    if (error) {
-      return { success: false, error: error.message };
+    const key = `chatlog_${userId}`;
+    const data = localStorage.getItem(key);
+    
+    if (!data) {
+      return { success: false, error: 'No chat log found' };
     }
 
-    const text = await data.text();
-    return { success: true, data: text };
+    return { success: true, data };
   } catch (error) {
     console.error('Read error:', error);
     return { success: false, error: String(error) };

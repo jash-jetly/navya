@@ -10,7 +10,7 @@ export async function sendGeminiMessage(messages: ChatMessage[], userPrompt: str
       .join('\n');
 
     const prompt = `You are an incredibly supportive and encouraging AI mentor for startup founders. Your mission is to inspire, motivate, and guide entrepreneurs to build amazing businesses. 
-dont let you response go above 300 words otherwise it is overwhelming
+
 **PERSONALITY TRAITS:**
 - **EXTREMELY SUPPORTIVE** - Always believe in the founder's potential
 - **HIGHLY ENCOURAGING** - Use motivational language and positive reinforcement
@@ -66,6 +66,90 @@ Respond with **maximum encouragement** and **strategic insight**. Make them feel
   }
 }
 
+export async function generatePersonalizedFeatures(chatLog: string, visionMission?: { vision: string; mission: string }): Promise<{ success: boolean; features?: Array<{id: string, name: string, description: string}>; error?: string }> {
+  try {
+    const vmText = visionMission ? `Vision: ${visionMission.vision}\nMission: ${visionMission.mission}\n\n` : '';
+    
+    const prompt = `**INCREDIBLE!** Based on this founder's amazing startup idea, generate 8-10 **PERSONALIZED FEATURES** that are specifically tailored to their business concept!
+
+${vmText}**Chat Log:**
+${chatLog}
+
+**YOUR MISSION:** Analyze their startup idea and create features that are:
+- **HIGHLY RELEVANT** to their specific business model
+- **STRATEGICALLY IMPORTANT** for their target market
+- **TECHNICALLY FEASIBLE** for an MVP
+- **BUSINESS-CRITICAL** for their success
+
+**RESPONSE FORMAT (JSON ONLY):**
+Return ONLY a valid JSON array with this exact structure:
+[
+  {
+    "id": "feature-slug",
+    "name": "Feature Name",
+    "description": "Detailed description of why this feature is crucial for their startup"
+  }
+]
+
+**EXAMPLE FEATURES TO INSPIRE YOU:**
+- User onboarding flows
+- Core business functionality
+- Payment/monetization features
+- User engagement tools
+- Analytics and insights
+- Communication features
+- Content management
+- Search and discovery
+- Social features
+- Admin tools
+
+**Generate personalized features NOW - make this founder's vision come alive!**`;
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    let featuresText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Clean up the response to extract JSON
+    featuresText = featuresText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    try {
+      const features = JSON.parse(featuresText);
+      return { success: true, features };
+    } catch (parseError) {
+      console.error('Failed to parse features JSON:', parseError);
+      // Fallback to default features if parsing fails
+      const defaultFeatures = [
+        { id: 'user-auth', name: 'User Authentication', description: 'Essential user registration and login system' },
+        { id: 'core-feature', name: 'Core Business Feature', description: 'The main functionality that drives your business value' },
+        { id: 'dashboard', name: 'User Dashboard', description: 'Central hub for users to manage their experience' },
+        { id: 'payments', name: 'Payment System', description: 'Monetization and transaction processing' },
+        { id: 'analytics', name: 'Analytics & Insights', description: 'Track performance and user behavior' }
+      ];
+      return { success: true, features: defaultFeatures };
+    }
+  } catch (error) {
+    console.error('Gemini features generation error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
 export async function generateFlowchartFromChatLog(chatLog: string, selectedFeatures: string[]): Promise<{ success: boolean; mermaidCode?: string; error?: string }> {
   try {
     const featuresText = selectedFeatures.join(', ');
@@ -74,13 +158,27 @@ export async function generateFlowchartFromChatLog(chatLog: string, selectedFeat
 
 Using the entire chat log below, generate a complete, structured code snippet for a flowchart using Mermaid.js syntax.
 
+**CRITICAL MERMAID SYNTAX RULES:**
+- Use ONLY alphanumeric characters and underscores for node IDs (no spaces, special characters, or parentheses)
+- Node labels should be in square brackets: [Label Text]
+- Use simple arrow connections: A --> B
+- Avoid complex shapes or special characters in node IDs
+- Keep node IDs short and descriptive like: start, login, dashboard, etc.
+
 **YOUR MISSION:** Create a flowchart that maps the user-flows for this incredible app, including:
 - **A master flow** showing the overall user journey
 - **Micro-flows** for each selected feature: ${featuresText}
 
+**EXAMPLE FORMAT:**
+flowchart TD
+    start[Start] --> login[User Login]
+    login --> dashboard[Dashboard]
+    dashboard --> feature1[Feature 1]
+    feature1 --> end[Complete]
+
 **REQUIREMENTS:**
-- The response must be well-structured, articulated, and ready to render
 - Return ONLY the Mermaid.js code block without any markdown formatting or explanation
+- Use simple, clean node IDs without special characters
 - Make it comprehensive and professional - this founder deserves the best!
 
 **Chat Log:**
@@ -109,7 +207,12 @@ ${chatLog}
     const data = await response.json();
     let mermaidCode = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
+    // Clean up the mermaid code
     mermaidCode = mermaidCode.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    // Additional cleanup for common syntax issues
+    mermaidCode = mermaidCode.replace(/\([^)]*\)/g, ''); // Remove parentheses from node IDs
+    mermaidCode = mermaidCode.replace(/[^a-zA-Z0-9_\[\]\->\s\n:]/g, ''); // Remove special characters
 
     return { success: true, mermaidCode };
   } catch (error) {

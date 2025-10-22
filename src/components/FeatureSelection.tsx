@@ -1,158 +1,193 @@
-import { useState } from 'react';
-import { CheckCircle2, Circle, ArrowRight, Loader2 } from 'lucide-react';
-import { Feature } from '../types';
+import React, { useState, useEffect } from 'react';
+import { generatePersonalizedFeatures } from '../services/gemini';
 
-interface FeatureSelectionProps {
-  onSubmit: (selectedFeatures: string[]) => void;
-  isGenerating: boolean;
+interface Feature {
+  id: string;
+  name: string;
+  description: string;
 }
 
-const AVAILABLE_FEATURES: Feature[] = [
-  {
-    id: 'user-auth',
-    name: 'User Authentication',
-    description: 'Sign up, login, password reset, and user profile management'
-  },
-  {
-    id: 'dashboard',
-    name: 'Dashboard',
-    description: 'Overview of key metrics and personalized user data'
-  },
-  {
-    id: 'search',
-    name: 'Search & Filter',
-    description: 'Advanced search functionality with filters and sorting'
-  },
-  {
-    id: 'notifications',
-    name: 'Notifications',
-    description: 'Real-time alerts and notification preferences'
-  },
-  {
-    id: 'payments',
-    name: 'Payment Processing',
-    description: 'Secure payment integration and subscription management'
-  },
-  {
-    id: 'messaging',
-    name: 'Messaging',
-    description: 'In-app messaging and communication features'
-  },
-  {
-    id: 'analytics',
-    name: 'Analytics',
-    description: 'Track user behavior and generate insights'
-  },
-  {
-    id: 'social',
-    name: 'Social Features',
-    description: 'User profiles, following, likes, and social interactions'
-  },
-  {
-    id: 'admin',
-    name: 'Admin Panel',
-    description: 'Backend management and content moderation tools'
-  },
-  {
-    id: 'api',
-    name: 'API Integration',
-    description: 'Third-party API connections and webhooks'
-  }
-];
+interface FeatureSelectionProps {
+  onFeatureSelect: (features: string[]) => void;
+  chatLog: string;
+  visionMission?: { vision: string; mission: string };
+}
 
-export default function FeatureSelection({ onSubmit, isGenerating }: FeatureSelectionProps) {
-  const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
+const FeatureSelection: React.FC<FeatureSelectionProps> = ({ onFeatureSelect, chatLog, visionMission }) => {
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const loadPersonalizedFeatures = async () => {
+      if (chatMessages.length > 0) {
+        setLoadingFeatures(true);
+        try {
+          // Convert chat messages to string format
+          const chatLog = chatMessages.map(msg => `${msg.sender}: ${msg.content}`).join('\n');
+          const result = await generatePersonalizedFeatures(chatLog);
+          if (result.success && result.features && result.features.length > 0) {
+            setFeatures(result.features);
+          }
+        } catch (error) {
+          console.error('Failed to generate personalized features:', error);
+          // Keep fallback features
+        } finally {
+          setLoadingFeatures(false);
+        }
+      }
+    };
+
+    loadPersonalizedFeatures();
+  }, [chatMessages]);
 
   const toggleFeature = (featureId: string) => {
-    const newSelected = new Set(selectedFeatures);
-    if (newSelected.has(featureId)) {
-      newSelected.delete(featureId);
-    } else {
-      newSelected.add(featureId);
-    }
-    setSelectedFeatures(newSelected);
+    setSelectedFeatures(prev => 
+      prev.includes(featureId) 
+        ? prev.filter(id => id !== featureId)
+        : [...prev, featureId]
+    );
   };
 
-  const handleSubmit = () => {
-    if (selectedFeatures.size > 0 && !isGenerating) {
-      const featureNames = Array.from(selectedFeatures).map(
-        id => AVAILABLE_FEATURES.find(f => f.id === id)?.name || id
-      );
-      onSubmit(featureNames);
+  const handleGenerateFlowchart = () => {
+    if (selectedFeatures.length === 0) {
+      alert('Please select at least one feature to generate the flowchart.');
+      return;
     }
+    setIsGenerating(true);
+    onFeatureSelect(selectedFeatures);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-green-400 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold mb-2">**GENERATING PERSONALIZED FEATURES**</h2>
+          <p className="text-green-300">*Analyzing your startup idea to create custom features...*</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-gray-900">Select Your App Features</h2>
-          <p className="text-gray-600">
-            Choose the features you want to include in your app. We'll generate a comprehensive flowchart based on your selections.
+    <div className="min-h-screen bg-black text-green-400 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4 glow-text">
+            **SELECT YOUR FEATURES**
+          </h1>
+          <p className="text-xl text-green-300 mb-2">
+            *These features are personalized for your startup!*
+          </p>
+          <p className="text-green-500">
+            Choose the features that will make your vision come alive
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {AVAILABLE_FEATURES.map((feature) => {
-            const isSelected = selectedFeatures.has(feature.id);
-            return (
-              <button
-                key={feature.id}
-                onClick={() => toggleFeature(feature.id)}
-                className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-1">
-                    {isSelected ? (
-                      <CheckCircle2 className="w-6 h-6 text-blue-600" />
-                    ) : (
-                      <Circle className="w-6 h-6 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{feature.name}</h3>
-                    <p className="text-sm text-gray-600">{feature.description}</p>
-                  </div>
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {features.map((feature) => (
+            <div
+              key={feature.id}
+              onClick={() => toggleFeature(feature.id)}
+              className={`
+                terminal-bg border-2 rounded-lg p-6 cursor-pointer transition-all duration-300 hover:scale-105
+                ${selectedFeatures.includes(feature.id) 
+                  ? 'border-green-400 bg-green-900/20 shadow-lg shadow-green-400/20' 
+                  : 'border-green-600 hover:border-green-400'
+                }
+              `}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-lg font-bold text-green-300">
+                  {feature.name}
+                </h3>
+                <div className={`
+                  w-6 h-6 rounded border-2 flex items-center justify-center
+                  ${selectedFeatures.includes(feature.id) 
+                    ? 'border-green-400 bg-green-400' 
+                    : 'border-green-600'
+                  }
+                `}>
+                  {selectedFeatures.includes(feature.id) && (
+                    <span className="text-black text-sm font-bold">✓</span>
+                  )}
                 </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-gray-900">
-                {selectedFeatures.size} feature{selectedFeatures.size !== 1 ? 's' : ''} selected
-              </p>
-              <p className="text-sm text-gray-600">
-                Select at least one feature to generate your flowchart
+              </div>
+              <p className="text-green-500 text-sm leading-relaxed">
+                {feature.description}
               </p>
             </div>
-            <button
-              onClick={handleSubmit}
-              disabled={selectedFeatures.size === 0 || isGenerating}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200 flex items-center gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating Flowchart...
-                </>
-              ) : (
-                <>
-                  Generate Flowchart
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+          ))}
+        </div>
+
+        {/* Selection Summary */}
+        {selectedFeatures.length > 0 && (
+          <div className="terminal-bg border border-green-600 rounded-lg p-6 mb-8">
+            <h3 className="text-xl font-bold text-green-300 mb-4">
+              **SELECTED FEATURES** ({selectedFeatures.length})
+            </h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {selectedFeatures.map((featureId) => {
+                const feature = features.find(f => f.id === featureId);
+                return (
+                  <span
+                    key={featureId}
+                    className="bg-green-900/30 border border-green-400 text-green-300 px-3 py-1 rounded text-sm"
+                  >
+                    {feature?.name}
+                  </span>
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        {/* Generate Button */}
+        <div className="text-center">
+          <button
+            onClick={handleGenerateFlowchart}
+            disabled={selectedFeatures.length === 0 || isGenerating}
+            className={`
+              terminal-button px-8 py-4 text-lg font-bold rounded-lg transition-all duration-300
+              ${selectedFeatures.length === 0 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:scale-105 hover:shadow-lg hover:shadow-green-400/30'
+              }
+            `}
+          >
+            {isGenerating ? (
+              <span className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
+                **GENERATING FLOWCHART...**
+              </span>
+            ) : (
+              '**GENERATE FLOWCHART**'
+            )}
+          </button>
+          
+          {selectedFeatures.length === 0 && (
+            <p className="text-green-600 mt-3 text-sm">
+              *Select at least one feature to continue*
+            </p>
+          )}
+        </div>
+
+        {/* Motivational Footer */}
+        <div className="text-center mt-12 p-6 terminal-bg border border-green-600 rounded-lg">
+          <p className="text-green-300 text-lg">
+            **"Every great startup begins with selecting the right features!"**
+          </p>
+          <p className="text-green-500 mt-2">
+            *You're building something incredible - choose wisely!*
+          </p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default FeatureSelection;
