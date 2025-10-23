@@ -23,7 +23,63 @@
     }
   }
 
+  @keyframes gentle-pulse {
+    0%, 100% {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    50% {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  }
+
   .animate-fade-in {
     animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-gentle-pulse {
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+
+  /* Enhanced typography for Gemini responses */
+  .gemini-response {
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  .gemini-response strong {
+    font-weight: 700;
+    color: #1f2937;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .gemini-response em {
+    font-style: italic;
+    color: #374151;
+    opacity: 0.9;
+  }
+
+  /* Smooth hover effects for AI messages */
+  .ai-message:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Custom scrollbar for chat */
+  .chat-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+
+  .chat-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .chat-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
   }
 }

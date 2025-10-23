@@ -122,7 +122,7 @@ function App() {
       </header>
 
       <main className="flex-1 overflow-hidden flex flex-col max-w-4xl w-full mx-auto">
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 chat-container">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 max-w-md shadow-lg">
