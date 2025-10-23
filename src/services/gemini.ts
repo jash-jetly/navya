@@ -1,4 +1,5 @@
 import { ChatMessage } from '../types';
+import { getCompleteAppDataFromStorage } from './supabase';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
@@ -152,11 +153,61 @@ Return ONLY a valid JSON array with this exact structure:
 
 export async function generateFlowchartFromChatLog(chatLog: string, selectedFeatures: string[]): Promise<{ success: boolean; mermaidCode?: string; error?: string }> {
   try {
+    // First, try to get complete context from user.txt file
+    const storageResult = await getCompleteAppDataFromStorage();
+    let contextData: any = null;
+    
+    if (storageResult.success && storageResult.data) {
+      contextData = storageResult.data;
+      console.log('**Using complete context from user.txt file for flowchart generation**');
+    } else {
+      console.log('**Fallback: Using provided chat log for flowchart generation**');
+    }
+
     const featuresText = selectedFeatures.join(', ');
 
-    const prompt = `**CONGRATULATIONS!** You're about to create an amazing flowchart that will bring your startup vision to life! 
+    // Build comprehensive context from stored data
+    let fullContext = '';
+    
+    if (contextData) {
+      fullContext = `
+**COMPLETE USER CONTEXT:**
 
-Using the entire chat log below, generate a complete, structured code snippet for a flowchart using Mermaid.js syntax.
+**CONVERSATION HISTORY:**
+${contextData.formattedConversation || chatLog}
+
+**VISION & MISSION:**
+${contextData.visionMission ? `Vision: ${contextData.visionMission.vision}\nMission: ${contextData.visionMission.mission}` : 'Not provided'}
+
+**SELECTED FEATURES:**
+${contextData.selectedFeatures ? contextData.selectedFeatures.join(', ') : featuresText}
+
+**CONVERSATION SUMMARY:**
+- Total Messages: ${contextData.summary?.totalMessages || 'Unknown'}
+- User Messages: ${contextData.summary?.userMessages || 'Unknown'}
+- AI Responses: ${contextData.summary?.aiResponses || 'Unknown'}
+`;
+    } else {
+      fullContext = `
+**CHAT LOG:**
+${chatLog}
+
+**SELECTED FEATURES:**
+${featuresText}
+`;
+    }
+
+    const prompt = `**CONGRATULATIONS!** You're about to create an amazing flowchart that will bring this startup vision to life! 
+
+You have access to the COMPLETE context of this user's startup journey. Use ALL of this information to create the most comprehensive and accurate flowchart possible.
+
+${fullContext}
+
+**YOUR MISSION:** Create a detailed flowchart that maps the user-flows for this incredible app, incorporating:
+- **The complete conversation context** - understand what the user really wants
+- **Their vision and mission** - align the flowchart with their goals
+- **All selected features** - ensure every feature is properly represented
+- **User journey flows** - from onboarding to core functionality
 
 **CRITICAL MERMAID SYNTAX RULES:**
 - Use ONLY alphanumeric characters and underscores for node IDs (no spaces, special characters, or parentheses)
@@ -164,10 +215,6 @@ Using the entire chat log below, generate a complete, structured code snippet fo
 - Use simple arrow connections: A --> B
 - Avoid complex shapes or special characters in node IDs
 - Keep node IDs short and descriptive like: start, login, dashboard, etc.
-
-**YOUR MISSION:** Create a flowchart that maps the user-flows for this incredible app, including:
-- **A master flow** showing the overall user journey
-- **Micro-flows** for each selected feature: ${featuresText}
 
 **EXAMPLE FORMAT:**
 flowchart TD
@@ -180,9 +227,8 @@ flowchart TD
 - Return ONLY the Mermaid.js code block without any markdown formatting or explanation
 - Use simple, clean node IDs without special characters
 - Make it comprehensive and professional - this founder deserves the best!
-
-**Chat Log:**
-${chatLog}
+- Include ALL the features they selected
+- Reflect their actual business vision and user needs
 
 **Generate the Mermaid.js flowchart code now - let's make this startup vision come to life!**`;
 
@@ -211,9 +257,14 @@ ${chatLog}
     mermaidCode = mermaidCode.replace(/```mermaid\n?/g, '').replace(/```\n?/g, '').trim();
     
     // Additional cleanup for common syntax issues
-    mermaidCode = mermaidCode.replace(/\([^)]*\)/g, ''); // Remove parentheses from node IDs
-    mermaidCode = mermaidCode.replace(/[^a-zA-Z0-9_\[\]\->\s\n:]/g, ''); // Remove special characters
+    const cleanedLines = mermaidCode.split('\n').map((line: string) => {
+      // Remove parentheses and special characters from node IDs
+      return line.replace(/\([^)]*\)/g, '').replace(/[^\w\[\]\->\s:]/g, '');
+    });
+    
+    mermaidCode = cleanedLines.join('\n');
 
+    console.log('**Flowchart generated using complete user context!**');
     return { success: true, mermaidCode };
   } catch (error) {
     console.error('Gemini flowchart generation error:', error);

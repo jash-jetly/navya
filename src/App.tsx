@@ -6,6 +6,7 @@ import FeatureSelection from './components/FeatureSelection';
 import FlowchartDisplay from './components/FlowchartDisplay';
 import { ChatMessage, VisionMission } from './types';
 import { generateFlowchartFromChatLog } from './services/gemini';
+import { saveAppDataToStorage } from './services/supabase';
 
 type AppStep = 'landing' | 'brainstorming' | 'vision-mission' | 'feature-selection' | 'flowchart';
 
@@ -13,6 +14,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState<AppStep>('landing');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [visionMission, setVisionMission] = useState<VisionMission | null>(null);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
   const [mermaidCode, setMermaidCode] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -29,14 +31,25 @@ function App() {
     setCurrentStep('feature-selection');
   };
 
-  const handleFeatureSelection = async (selectedFeatures: string[]) => {
+  const handleFeatureSelection = async (features: string[]) => {
+    setSelectedFeatures(features);
     setIsGenerating(true);
     try {
       const chatLog = chatMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
-      const result = await generateFlowchartFromChatLog(chatLog, selectedFeatures);
+      const result = await generateFlowchartFromChatLog(chatLog, features);
       
       if (result.success && result.mermaidCode) {
         setMermaidCode(result.mermaidCode);
+        
+        // Save complete app data to Supabase storage with all context
+        await saveAppDataToStorage({
+          userId: `user_${Date.now()}`, // Generate unique user ID
+          chatMessages: chatMessages, // Pass complete chat messages array
+          visionMission: visionMission || undefined,
+          selectedFeatures: features,
+          mermaidCode: result.mermaidCode
+        });
+        
         setCurrentStep('flowchart');
       } else {
         console.error('Failed to generate flowchart:', result.error);
@@ -54,6 +67,7 @@ function App() {
     setCurrentStep('landing');
     setChatMessages([]);
     setVisionMission(null);
+    setSelectedFeatures([]);
     setMermaidCode('');
     setIsGenerating(false);
   };

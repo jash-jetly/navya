@@ -13,34 +13,84 @@ interface FeatureSelectionProps {
   visionMission?: { vision: string; mission: string };
 }
 
+// Fallback features in case personalized generation fails
+const FALLBACK_FEATURES: Feature[] = [
+  {
+    id: 'user-auth',
+    name: 'User Authentication',
+    description: 'Secure user registration, login, and profile management system'
+  },
+  {
+    id: 'dashboard',
+    name: 'User Dashboard',
+    description: 'Personalized dashboard showing key metrics and user data'
+  },
+  {
+    id: 'notifications',
+    name: 'Push Notifications',
+    description: 'Real-time notifications to keep users engaged'
+  },
+  {
+    id: 'analytics',
+    name: 'Analytics & Insights',
+    description: 'Track user behavior and app performance metrics'
+  },
+  {
+    id: 'payment',
+    name: 'Payment Integration',
+    description: 'Secure payment processing and subscription management'
+  },
+  {
+    id: 'social-sharing',
+    name: 'Social Sharing',
+    description: 'Share content and achievements on social platforms'
+  },
+  {
+    id: 'search',
+    name: 'Advanced Search',
+    description: 'Powerful search functionality with filters and suggestions'
+  },
+  {
+    id: 'messaging',
+    name: 'In-App Messaging',
+    description: 'Real-time chat and communication features'
+  }
+];
+
 const FeatureSelection: React.FC<FeatureSelectionProps> = ({ onFeatureSelect, chatLog, visionMission }) => {
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [features, setFeatures] = useState<Feature[]>([]);
+  const [features, setFeatures] = useState<Feature[]>(FALLBACK_FEATURES);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const loadPersonalizedFeatures = async () => {
-      if (chatMessages.length > 0) {
-        setLoadingFeatures(true);
+      if (chatLog && chatLog.trim().length > 0) {
+        setIsLoading(true);
         try {
-          // Convert chat messages to string format
-          const chatLog = chatMessages.map(msg => `${msg.sender}: ${msg.content}`).join('\n');
-          const result = await generatePersonalizedFeatures(chatLog);
+          const result = await generatePersonalizedFeatures(chatLog, visionMission);
           if (result.success && result.features && result.features.length > 0) {
             setFeatures(result.features);
+            console.log('**Personalized features generated successfully!**');
+          } else {
+            console.log('**Using fallback features**');
+            setFeatures(FALLBACK_FEATURES);
           }
         } catch (error) {
           console.error('Failed to generate personalized features:', error);
-          // Keep fallback features
+          setFeatures(FALLBACK_FEATURES);
         } finally {
-          setLoadingFeatures(false);
+          setIsLoading(false);
         }
+      } else {
+        // No chat log available, use fallback features
+        setFeatures(FALLBACK_FEATURES);
+        setIsLoading(false);
       }
     };
 
     loadPersonalizedFeatures();
-  }, [chatMessages]);
+  }, [chatLog, visionMission]);
 
   const toggleFeature = (featureId: string) => {
     setSelectedFeatures(prev => 
