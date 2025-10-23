@@ -23,7 +23,7 @@ export async function sendFriendMessage(
 ): Promise<string> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       systemInstruction: FRIEND_SYSTEM_PROMPT,
     });
 

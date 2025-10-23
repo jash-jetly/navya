@@ -42,7 +42,7 @@ export async function sendGeneralMessage(
 ): Promise<GeneralChatResponse> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       systemInstruction: GENERAL_SYSTEM_PROMPT,
     });
 

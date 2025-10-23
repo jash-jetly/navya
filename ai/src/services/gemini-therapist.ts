@@ -23,7 +23,7 @@ export async function sendTherapistMessage(
 ): Promise<string> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-flash',
       systemInstruction: THERAPIST_SYSTEM_PROMPT,
     });
 
